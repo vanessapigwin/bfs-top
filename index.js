@@ -6,11 +6,11 @@ const Node = (value) => {
 
 const prettyPrint = (node, prefix = "", isLeft = true) => {
   if (node === null) return;
-  if (node.right !== null) {
+  if (node.right) {
     prettyPrint(node.right, `${prefix}${isLeft ? "│   " : "    "}`, false);
   }
   console.log(`${prefix}${isLeft ? "└── " : "┌── "}${node.value}`);
-  if (node.left !== null) {
+  if (node.left) {
     prettyPrint(node.left, `${prefix}${isLeft ? "    " : "│   "}`, true);
   }
 };
@@ -96,17 +96,13 @@ const BST = (list) => {
       if (node.left === null && node.right === null) {
         parent.left = null;
         parent.right = null;
-      } else if (
-        node.value === value &&
-        node.left !== null &&
-        node.right !== null
-      ) {
+      } else if (node.value === value && node.left && node.right) {
         // case 2: node has left and right child
         // get minimum of right tree and replace on node value
         const nodeParent = node;
         let previous;
         let successor = nodeParent.right;
-        while (successor.left !== null) {
+        while (successor.left) {
           previous = successor;
           successor = successor.left;
         }
@@ -114,19 +110,15 @@ const BST = (list) => {
         // delete left value of previous
         previous.left = null;
         node = nodeParent;
-      } else if (
-        parent &&
-        node.value === value &&
-        (node.left !== null || node.right !== null)
-      ) {
+      } else if (parent && node.value === value && (node.left || node.right)) {
         // case 3: node has one child
         console.log("case 2 triggered");
         // get left or right child and assign as parent's left or right val
         let child;
-        if (node.left !== null) {
+        if (node.left) {
           child = node.left;
           parent.left = child;
-        } else if (node.right !== null) {
+        } else if (node.right) {
           child = node.right;
           parent.right = child;
         }
@@ -140,20 +132,60 @@ const BST = (list) => {
     }
   };
 
-  const levelOrder = (fn) => {
-    if (!fn) {
-      console.log("return an array");
-      return [];
+  const levelOrder = (queue = [root], res = []) => {
+    /*
+    traverses all nodes by level (all zeros first, 1st levels, etc)
+    uses a queue to keep track of nodes to traverse
+    */
+    if (queue.length > 0) {
+      const elem = queue.shift();
+      res.push(elem.value);
+      if (elem.left) queue.push(elem.left);
+      if (elem.right) queue.push(elem.right);
+      levelOrder(queue, res);
     }
+    return res;
+  };
+
+  const preOrder = (node = root, res = []) => {
+    /*
+    traverses tree from root to leaves. visited node
+    is noted first, left node is prioritized to visit
+    */
+    if (!node) return;
+    res.push(node.value);
+    preOrder(node.left, res);
+    preOrder(node.right, res);
+    return res;
+  };
+
+  const inOrder = (node = root, res = []) => {
+    /*
+    traverses tree from root to leaves. push to left is 
+    prioritized, then value of node is read, and right side is traversed
+    */
+    if (!node) return;
+    inOrder(node.left, res);
+    res.push(node.value);
+    inOrder(node.right, res);
+    return res;
+  };
+
+  const postOrder = (node = root, res = []) => {
+    if (!node) return;
+    postOrder(node.left, res);
+    postOrder(node.right, res);
+    res.push(node.value);
+    return res;
   };
 
   const root = buildTree(list);
-  return { root, insert, find, del, levelOrder };
+  return { root, insert, find, del, levelOrder, inOrder, preOrder, postOrder };
 };
 
-// test for buildTree function
 const arr = [1, 2, 3, 4, 5, 6, 6, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
-const tree = BST(arr);
+// // test for buildTree function
+// const tree = BST(arr);
 // prettyPrint(tree.root);
 
 // // test for insert
@@ -196,7 +228,14 @@ const tree = BST(arr);
 // tree.del(tree.root, grandparent);
 // prettyPrint(tree.root);
 
-// bfs test
+// // traversals
 const tree2 = BST(arr);
 prettyPrint(tree2.root);
-console.log(tree2.levelOrder());
+// console.log("breadth first");
+// console.log(tree2.levelOrder());
+// console.log("depth first, preorder");
+// console.log(tree2.preOrder());
+// console.log("depth first, inorder");
+// console.log(tree2.inOrder());
+// console.log("depth first, postorder");
+// console.log(tree2.postOrder());
