@@ -54,6 +54,8 @@ const BST = (list) => {
     }
   };
 
+  let root = buildTree(list);
+
   const insert = (node, value) => {
     if (node === null) {
       const node = Node(value);
@@ -62,7 +64,7 @@ const BST = (list) => {
 
     if (value === node.value) {
       console.log("Value already in tree, aborting");
-      return node;
+      return;
     }
 
     if (value < node.value) {
@@ -90,30 +92,37 @@ const BST = (list) => {
   };
 
   const del = (node, value, parent = undefined) => {
+    /*
+    checks for each exit condition when value is found: 
+    Case 1: node to delete is a leaf
+    Case 2: node to delete has left and right children
+    Case 3: node only has 1 child
+    If value is not found the node is updated and the delete 
+    function is called
+    */
     if (node === null) console.log("Value not found");
     if (node.value === value) {
-      // case 1: node does not have children
+      // case 1
       if (node.left === null && node.right === null) {
         parent.left = null;
         parent.right = null;
       } else if (node.value === value && node.left && node.right) {
-        // case 2: node has left and right child
-        // get minimum of right tree and replace on node value
+        // case 2
         const nodeParent = node;
         let previous;
         let successor = nodeParent.right;
+        // get minimum of right tree
         while (successor.left) {
           previous = successor;
           successor = successor.left;
         }
+        // switch values of minimum from right tree and node to del
         nodeParent.value = successor.value;
         // delete left value of previous
         previous.left = null;
         node = nodeParent;
       } else if (parent && node.value === value && (node.left || node.right)) {
-        // case 3: node has one child
-        console.log("case 2 triggered");
-        // get left or right child and assign as parent's left or right val
+        // case 3
         let child;
         if (node.left) {
           child = node.left;
@@ -172,6 +181,10 @@ const BST = (list) => {
   };
 
   const postOrder = (node = root, res = []) => {
+    /*
+    traverses tree from root to leaves, values from left and right are read 
+    first prior to read of parent
+    */
     if (!node) return;
     postOrder(node.left, res);
     postOrder(node.right, res);
@@ -179,63 +192,102 @@ const BST = (list) => {
     return res;
   };
 
-  const root = buildTree(list);
-  return { root, insert, find, del, levelOrder, inOrder, preOrder, postOrder };
+  const height = (node = root) => {
+    // determines the distance of the root node to the furthest leaf node.
+    if (!node) return 0;
+    const leftHeight = height(node.left) + 1;
+    const rightHeight = height(node.right) + 1;
+    return Math.max(leftHeight, rightHeight);
+  };
+
+  const depth = (value, level = 0, node = root) => {
+    // determines the distance of root node to node with value
+    if (!node) return "not found";
+    if (node.value === value) return level;
+
+    level += 1;
+    if (value > node.value) return depth(value, level, node.right);
+    else if (value < node.value) return depth(value, level, node.left);
+    return level;
+  };
+
+  const isBalanced = (node = root, isBal = false) => {
+    /* 
+    determines if height difference of each node is within 1
+    tree is assumed unbalanced, and unless all nodes are marked balanced
+    he assumption is maintained.
+    */
+    if (!node) return true;
+
+    // check the left and right children balance
+    const left = isBalanced(node.left, isBal);
+    const right = isBalanced(node.right, isBal);
+    // calculate height difference between left and right
+    const leftHt = height(node.left);
+    const rightHt = height(node.right);
+    const decision = Math.abs(leftHt - rightHt) <= 1;
+    // if height diff does not exceed 1, and both left and right children are
+    // balanced, balance value is updated to true
+    if (decision && left && right) {
+      isBal = decision;
+    }
+    return isBal;
+  };
+
+  const rebalance = () => {
+    const newlist = inOrder(root);
+    root = buildTree(newlist);
+  };
+
+  return {
+    get root() {
+      return root;
+    },
+    insert,
+    find,
+    del,
+    levelOrder,
+    inOrder,
+    preOrder,
+    postOrder,
+    height,
+    depth,
+    isBalanced,
+    rebalance,
+  };
 };
 
-const arr = [1, 2, 3, 4, 5, 6, 6, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
-// // test for buildTree function
-// const tree = BST(arr);
-// prettyPrint(tree.root);
+(() => {
+  const arr = new Array(15)
+    .fill(null)
+    .map(() => Math.floor(Math.random() * 101));
+  console.log("The original array: ", arr);
 
-// // test for insert
-// console.log("completed tree, with insert");
-// tree.insert(tree.root, 69);
-// tree.insert(tree.root, 0);
-// prettyPrint(tree.root);
+  const tree = BST(arr);
+  prettyPrint(tree.root);
+  console.log("Is balanced? ", tree.isBalanced());
 
-// // test for find
-// console.log("searching");
-// const exists = tree.find(tree.root, 69);
-// console.log(exists);
-// const doesNotExist = tree.find(tree.root, 1000);
-// console.log(doesNotExist);
+  console.log("Level Order traversal: ", tree.levelOrder());
+  console.log("Preorder traversal: ", tree.preOrder());
+  console.log("Postorder traversal: ", tree.postOrder());
+  console.log("Inorder traversal: ", tree.inOrder());
 
-// // // test for delete
-// prettyPrint(tree.root);
-// console.log("deletions");
-// // leaf case
-// const leaf = 69;
-// console.log("deletion of leaf ", leaf);
-// tree.del(tree.root, leaf);
-// prettyPrint(tree.root);
+  console.log("Unbalancing the tree!!!");
+  tree.insert(tree.root, -1100);
+  tree.insert(tree.root, -200);
+  tree.insert(tree.root, 1000);
+  tree.insert(tree.root, 2000);
+  tree.insert(tree.root, 3000);
+  prettyPrint(tree.root);
+  console.log("Is balanced? ", tree.isBalanced());
 
-// // single child case
-// const bestChild = 1;
-// console.log("deletion of parent with 1 child ", bestChild);
-// tree.del(tree.root, bestChild);
-// prettyPrint(tree.root);
+  console.log("Balancing tree!");
+  tree.rebalance();
+  prettyPrint(tree.root);
+  console.log("Is balanced? ", tree.isBalanced());
 
-// // 2 children case A
-// const parent = 4;
-// console.log("deletion of parent with 2 children ", parent);
-// tree.del(tree.root, parent);
-// prettyPrint(tree.root);
-
-// // 2 children case B
-// const grandparent = 8;
-// console.log("deletion of parent with 2 children ", grandparent);
-// tree.del(tree.root, grandparent);
-// prettyPrint(tree.root);
-
-// // traversals
-const tree2 = BST(arr);
-prettyPrint(tree2.root);
-// console.log("breadth first");
-// console.log(tree2.levelOrder());
-// console.log("depth first, preorder");
-// console.log(tree2.preOrder());
-// console.log("depth first, inorder");
-// console.log(tree2.inOrder());
-// console.log("depth first, postorder");
-// console.log(tree2.postOrder());
+  console.log("Level Order traversal: ", tree.levelOrder());
+  console.log("Preorder traversal: ", tree.preOrder());
+  console.log("Postorder traversal: ", tree.postOrder());
+  console.log("Inorder traversal: ", tree.inOrder());
+})();
